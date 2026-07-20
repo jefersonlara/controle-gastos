@@ -179,6 +179,20 @@ async function handleGitHubCallback() {
   return { ok: true };
 }
 
+/* A sessão salva corresponde ao modo de login configurado agora?
+   Evita que uma sessão antiga (ex.: usuário/senha) libere o acesso
+   depois que o app passou a exigir login com Google. */
+function sessionMatchesMode(sess) {
+  if (!sess || !sess.loginMethod) return false;
+  const mode = AUTH_CONFIG.mode;
+  const m = sess.loginMethod;
+  if (mode === 'google') return m === 'google';
+  if (mode === 'github') return m === 'github';
+  if (mode === 'simple') return m === 'password';
+  if (mode === 'both')   return m === 'password' || m === 'github';
+  return false;
+}
+
 /* ---------- Verificação de autenticação principal ---------- */
 
 async function checkAuth() {
@@ -196,7 +210,7 @@ async function checkAuth() {
 
   // 2. Verificar sessão existente
   const sess = loadSession();
-  if (isSessionValid(sess)) {
+  if (isSessionValid(sess) && sessionMatchesMode(sess)) {
     _session = sess;
     // Sessão Google → retoma o contexto (token + planilha) em segundo plano
     if (sess.loginMethod === 'google' && window.GoogleSync) {
@@ -205,6 +219,8 @@ async function checkAuth() {
     updateUserUI();
     return true;
   }
+  // Sessão inválida ou de um modo diferente do atual → descarta
+  if (sess) clearSession();
 
   // 3. Primeira execução (só no modo usuário/senha) → tela de criação do admin
   const pwdMode = AUTH_CONFIG.mode === 'simple' || AUTH_CONFIG.mode === 'both';

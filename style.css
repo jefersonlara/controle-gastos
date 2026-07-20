@@ -138,9 +138,11 @@ h1,h2,h3,p{ margin: 0; }
 /* ============== Cartão de saldo ============== */
 .balance-wrap{ padding: 4px 16px 0; }
 .balance-card{
-  /* Usa variável --card-bg que é sempre escura e muda suavemente entre modos */
-  background: var(--card-bg);
-  color: #fff;
+  /* Fundo SEMPRE escuro, independente do tema. O valor fixo serve de
+     fallback caso a variável não resolva em algum navegador antigo. */
+  background: #0B3D3C;
+  background: var(--card-bg, #0B3D3C);
+  color: #ffffff;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   padding: 22px 22px 20px;
   position: relative; overflow: hidden;
@@ -150,11 +152,11 @@ h1,h2,h3,p{ margin: 0; }
   content: "";
   display: block;
   position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
-  background: radial-gradient(circle at 7px 0, transparent 7px, var(--card-bg-perf) 7.5px) repeat-x;
+  background: radial-gradient(circle at 7px 0, transparent 7px, var(--card-bg-perf, #0B3D3C) 7.5px) repeat-x;
   background-size: 18px 14px;
 }
-.balance-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--gold-soft); opacity: .9; font-weight: 700; }
-.balance-amount{ font-family: var(--font-mono); font-weight: 700; font-size: 38px; line-height: 1.18; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.balance-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; color: #E8C77E; opacity: .9; font-weight: 700; }
+.balance-amount{ font-family: var(--font-mono); font-weight: 700; font-size: 38px; line-height: 1.18; margin-top: 6px; font-variant-numeric: tabular-nums; color: #ffffff; }
 .balance-amount.negative{ color: #FF9B80; }
 .balance-sub{ display: flex; gap: 24px; margin-top: 14px; }
 .balance-sub div{ font-size: 12px; color: rgba(255,255,255,0.65); }

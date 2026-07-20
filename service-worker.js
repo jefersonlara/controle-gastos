@@ -5,7 +5,7 @@
    Ao publicar uma atualização do app, troque o número da versão
    abaixo (CACHE_NAME) para forçar o iPhone a buscar os arquivos
    novos. */
-const CACHE_NAME = 'controle-gastos-v3';
+const CACHE_NAME = 'controle-gastos-v4';
 const APP_SHELL = [
   './',
   './index.html',
