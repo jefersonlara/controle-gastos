@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Controle de Gastos</title>
+<meta name="description" content="Lance receitas e despesas mensais de forma rápida, direto do iPhone.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B3D3C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Overlay de autenticação (gerenciado por auth.js) -->
+<div id="authOverlay" role="dialog" aria-modal="true" aria-label="Login"></div>
+
+<div id="app">
+
+  <!-- Marca + usuário logado -->
+  <div class="brand-row">
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="14" width="4" height="7" rx="1.5" fill="#E8C77E"/><rect x="10" y="9" width="4" height="12" rx="1.5" fill="#E8C77E"/><rect x="17" y="4" width="4" height="17" rx="1.5" fill="#E8C77E"/></svg>
+    </span>
+    <span class="brand-title">Controle de Gastos</span>
+    <!-- Pílula do usuário — aparece após o login -->
+    <button id="btnUserPill" class="user-pill" style="display:none" aria-label="Conta e usuários" title="Gerenciar conta">
+      <span class="avatar"></span>
+      <span id="pillName"></span>
+    </button>
+  </div>
+
+  <!-- Navegação de mês -->
+  <div class="topbar">
+    <button class="icon-btn" id="openCategories" aria-label="Categorias">🏷️</button>
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="Mês anterior">‹</button>
+      <span class="month-label" id="monthLabel">—</span>
+      <button id="nextMonth" aria-label="Próximo mês">›</button>
+    </div>
+    <button class="icon-btn" id="openExport" aria-label="Exportar">⬇️</button>
+  </div>
+
+  <!-- Cartão de saldo -->
+  <div class="balance-wrap">
+    <div class="balance-card">
+      <div class="balance-label">Saldo do mês</div>
+      <div class="balance-amount tabular" id="balanceAmount">R$ 0,00</div>
+      <div class="balance-sub">
+        <div class="in">Receitas<span class="v tabular" id="totalIncome">R$ 0,00</span></div>
+        <div class="out">Despesas<span class="v tabular" id="totalExpense">R$ 0,00</span></div>
+      </div>
+    </div>
+    <div class="receipt-tear"></div>
+  </div>
+
+  <!-- Painel de insights -->
+  <div class="insight">
+    <div class="insight-title">Para onde foi o dinheiro</div>
+    <div class="insight-bar" id="insightBar"></div>
+    <div class="insight-legend" id="insightLegend"></div>
+    <div class="insight-tip" id="insightTip"></div>
+  </div>
+
+  <!-- Lista de lançamentos -->
+  <div class="entries">
+    <div class="entries-title">Lançamentos do mês</div>
+    <div id="entriesList"></div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- Botões de ação rápida -->
+<div class="action-bar">
+  <div class="wrap">
+    <button class="btn-action btn-expense" id="btnAddExpense">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Despesa
+    </button>
+    <button class="btn-action btn-income" id="btnAddIncome">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Receita
+    </button>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<!-- Sheet: Novo Lançamento -->
+<div class="sheet" id="sheetEntry" role="dialog" aria-modal="true" aria-labelledby="entryTitle">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <button class="icon-btn" id="entryBack" style="visibility:hidden" aria-label="Voltar">‹</button>
+    <h2 id="entryTitle">Nova despesa</h2>
+    <button class="icon-btn" id="entryClose" aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div id="entryStepCat"><div class="cat-grid" id="catGrid"></div></div>
+    <div id="entryStepAmount" style="display:none">
+      <div class="selected-cat">
+        <span class="ic" id="selCatIcon"></span>
+        <span class="lb" id="selCatLabel"></span>
+        <button id="selCatChange">trocar</button>
+      </div>
+      <div class="amount-display tabular" id="amountDisplay">R$ 0,00</div>
+      <div class="keypad" id="keypad" role="group" aria-label="Teclado">
+        <button class="key" data-k="1">1</button>
+        <button class="key" data-k="2">2</button>
+        <button class="key" data-k="3">3</button>
+        <button class="key" data-k="4">4</button>
+        <button class="key" data-k="5">5</button>
+        <button class="key" data-k="6">6</button>
+        <button class="key" data-k="7">7</button>
+        <button class="key" data-k="8">8</button>
+        <button class="key" data-k="9">9</button>
+        <button class="key fn" data-k="clear">limpar</button>
+        <button class="key" data-k="0">0</button>
+        <button class="key fn" data-k="back">⌫</button>
+      </div>
+      <div class="field">
+        <label for="descInput">Descrição (opcional)</label>
+        <input type="text" id="descInput" maxlength="60" placeholder="Ex.: fatura de junho…" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="dateInput">Data</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field" id="classField">
+        <label>Esse gasto é…</label>
+        <div class="class-row" id="classRow"></div>
+      </div>
+      <button class="btn-save" id="saveEntry" disabled>Salvar lançamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Categorias -->
+<div class="sheet" id="sheetCategories" role="dialog" aria-modal="true">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <span style="width:40px"></span>
+    <h2>Categorias</h2>
+    <button class="icon-btn" id="catClose" aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet-body">
+    <p class="export-help">Ative ou desative categorias para acelerar o lançamento. Crie as suas próprias abaixo.</p>
+    <div class="section-sub">Despesas ativas</div>
+    <div class="cat-manage-list" id="activeExpenseList"></div>
+    <div class="section-sub">Mais sugestões</div>
+    <div class="cat-manage-list" id="suggestedExpenseList"></div>
+    <div class="section-sub">Receitas</div>
+    <div class="cat-manage-list" id="incomeList"></div>
+    <div class="new-cat-form">
+      <div class="section-sub" style="margin-top:0">Nova categoria</div>
+      <div class="row-2">
+        <div class="field"><label for="newCatIcon">Ícone</label><input type="text" id="newCatIcon" maxlength="2" placeholder="📌" autocomplete="off"></div>
+        <div class="field"><label for="newCatName">Nome</label><input type="text" id="newCatName" maxlength="24" placeholder="Ex.: Pet, Farmácia…" autocomplete="off"></div>
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <div class="class-row" id="newCatType">
+          <button class="chip active" data-type="expense">Despesa</button>
+          <button class="chip" data-type="income">Receita</button>
+        </div>
+      </div>
+      <div class="field" id="newCatClassField">
+        <label>Classificação</label>
+        <div class="class-row" id="newCatClass"></div>
+      </div>
+      <button class="btn-save" id="addCustomCat">Adicionar categoria</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Exportar / Backup / Conta -->
+<div class="sheet" id="sheetExport" role="dialog" aria-modal="true">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <span style="width:40px"></span>
+    <h2>Exportar dados</h2>
+    <button class="icon-btn" id="exportClose" aria-label="Fechar">✕</button>
+  </div>
+  <div class="sheet-body">
+    <p class="export-help">Selecione o período e exporte uma planilha <b>.xlsx</b> pronta para o Excel ou Numbers.</p>
+    <div class="row-2">
+      <div class="field"><label for="exportStart">Data início</label><input type="date" id="exportStart"></div>
+      <div class="field"><label for="exportEnd">Data fim</label><input type="date" id="exportEnd"></div>
+    </div>
+    <div class="export-summary" id="exportSummary">Selecione o período para ver o resumo.</div>
+    <button class="btn-save" id="doExport">📊 Exportar planilha (.xlsx)</button>
+    <div class="backup-section">
+      <div class="backup-title">🔒 Backup dos dados</div>
+      <p class="export-help" style="margin-bottom:0">Faça backup periódico para não perder dados ao limpar o Safari ou trocar de iPhone.</p>
+      <div class="backup-row">
+        <button id="doBackup">💾 Fazer backup</button>
+        <button id="doRestore">📂 Restaurar backup</button>
+      </div>
+      <div class="backup-row">
+        <button class="danger" id="doClearData">🗑️ Apagar todos os dados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="restoreFileInput" accept=".json" style="display:none">
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Scripts: config de auth → módulo auth → xlsx → app principal -->
+<script src="auth-config.js"></script>
+<script src="google-sync.js"></script>
+<script src="auth.js"></script>
+<script src="xlsx.mini.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
